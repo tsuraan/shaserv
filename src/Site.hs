@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns #-}
 
 {-|
 
@@ -11,7 +12,6 @@ module Site
   ( site
   ) where
 
-import           Control.Monad.Trans
 import           Control.Applicative
 import           Data.Maybe
 import qualified Data.Text.Encoding as T
@@ -23,7 +23,6 @@ import           Snap.Types
 import           Snap.Iteratee
 import           Text.Templating.Heist
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
 import           Control.Monad (forM_)
 
 import           Application
@@ -83,11 +82,11 @@ upload = do
          (Chunks [])
 
     -- get the next Step based on the current stream state
-    go name hash (Chunks []) = returnI $ Continue $ go name hash
-    go name hash (Chunks (x:xs)) = go name
+    go name !hash (Chunks []) = returnI $ Continue $ go name hash
+    go name !hash (Chunks (x:xs)) = go name
                                       (Hash.update hash x)
                                       (Chunks xs)
-    go name hash EOF = returnI $ Yield (name, Hash.finalize hash) EOF
+    go name !hash EOF = returnI $ Yield (name, Hash.finalize hash) EOF
 
 
     -- This really ought to use heist, but I don't see how it does list
